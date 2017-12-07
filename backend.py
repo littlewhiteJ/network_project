@@ -163,12 +163,18 @@ def get_today_record():
 @app.route('/get_user_record', methods = ['POST'])
 def get_user_record():
     user = request.form['which_user']
+    info = request.form['info']
     filename = 'data' + user + '.json'
     if (os.path.exists(filename)):
         userf = open(filename, 'r')
         userdict = json.load(userf)
-        user_string = json.dumps(userdict)
-        return user_string
+        if info == 0:
+            return userdict['sum']
+        if info == 1:
+            return userdict['record_sum']
+        if info == 2:
+            return json.dumps(userdict['record'])
+        return '1'
     else:
         return '0' # no that user
 
