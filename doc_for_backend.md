@@ -44,13 +44,31 @@ you should
 
 add ("username", username)
 
-and ("password", password)
+and ("to_addr", to_addr)
+
 
 #### return
 ##### return "0"
 this name is occupied
 ##### return "1"
-register is okay
+send mail okay
+
+### /register_with_code
+#### formbuilder
+you should
+
+add ("username", username)
+
+and ("password", password)
+
+and ("code", code)
+
+#### return
+##### return "0"
+register okay
+##### return "1"
+code error
+
 
 ### /record
 #### formbuilder
@@ -88,5 +106,25 @@ now i will explain the string
 		"time":8_15_55
 	}
 ]
+
+### /get_user_record
+#### formbuilder
+
+add ("which_user", username)
+
+and ("info", info)
+```
+switch(info)
+case 0: return sum # the sum of his register days
+case 1: return record_sum # the sum of his record days
+case 2: return the detail of the record( explain by a dict, and the time is timestamp)
+```
+#### return
+##### return '0'
+no that user
+##### return '1'
+info is wrong
+##### return a string
+explain above
 
 ## to be continued
