@@ -1,14 +1,18 @@
 from email.mime.text import MIMEText
 import smtplib
 
-def email_(msg, to_addr, password):
-    title = 'your mail is used to sign in our app\'s server <day day up record> \n if it is not you(oh mny lovely boy) did this\n you cannot see this email\n you cannot see this email\n you cannot see this email\n :) \n else your code to sign in successfully is \n'
+def email_(msg, to_addr, password):    
+    from_addr = 'christ_j@yeah.net'
+    me = 'hello' + '<' + from_addr + '>'
+    title = 'welcome register in our record app\nif it is yourself who did this\njust delete it\nanaway we create a code for you\nit is '
     msg = title + msg
     msg = MIMEText(msg, 'plain', 'utf-8')
-    from_addr = '1500012873@pku.edu.cn'
-    smtp_server = 'smtp.pku.edu.cn'
-    server = smtplib.SMTP(smtp_server, 25)
+    msg['Subject'] = 'welcome register'
+    msg['From'] = me
+    msg['To'] = to_addr
+    smtp_server = 'smtp.yeah.net'
+    server = smtplib.SMTP_SSL(smtp_server, 587)
     server.set_debuglevel(1)
     server.login(from_addr, password)
-    server.sendmail(from_addr, [to_addr], msg.as_string())
+    server.sendmail(me, [to_addr], msg.as_string())
     server.quit()
