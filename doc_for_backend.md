@@ -118,6 +118,7 @@ switch(info)
 case 0: return sum # the sum of his register days
 case 1: return record_sum # the sum of his record days
 case 2: return the detail of the record( explain by a dict, and the time is timestamp)
+case 3: return con_record # his continue record times
 ```
 #### return
 ##### return '0'
@@ -126,5 +127,43 @@ no that user
 info is wrong
 ##### return a string
 explain above
+
+### /all_ranking
+#### formbuilder
+
+add ("username", username)
+
+##### return a string
+now i will explain the string
+
+**it contents:**
+
+{
+	"rank":ranknum
+	"first2sixth":
+		[
+			"name":sum of reocrd
+			...
+		]
+}
+
+### /con_ranking
+#### formbuilder
+
+add ("username", username)
+
+##### return a string
+now i will explain the string
+
+**it contents:**
+
+{
+	"rank":ranknum
+	"first2sixth":
+		[
+			"name":sum of continue reocrd
+			...
+		]
+}
 
 ## to be continued
