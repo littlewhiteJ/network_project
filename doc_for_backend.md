@@ -97,14 +97,23 @@ now i will explain the string
 **it contents:**
 
 [
+
 	{
+	
 		"username":USERNAME
+		
 		"time":hour_min_second
+		
 	}
+	
 	{
+	
 		"username":littlewhiteJ
+		
 		"time":8_15_55
+		
 	}
+	
 ]
 
 ### /get_user_record
@@ -139,12 +148,19 @@ now i will explain the string
 **it contents:**
 
 {
+
 	"rank":ranknum
+	
 	"first2sixth":
+	
 		[
+		
 			"name":sum of reocrd
+			
 			...
+			
 		]
+		
 }
 
 ### /con_ranking
@@ -158,12 +174,22 @@ now i will explain the string
 **it contents:**
 
 {
+
 	"rank":ranknum
+	
 	"first2sixth":
+	
 		[
+		
 			"name":sum of continue reocrd
+			
 			...
+			
 		]
+		
 }
+
+
+
 
 ## to be continued
