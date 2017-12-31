@@ -4,7 +4,7 @@ import smtplib
 def email_(msg, to_addr, password):    
     from_addr = 'christ_j@yeah.net'
     me = 'hello' + '<' + from_addr + '>'
-    title = 'welcome register in our record app\nif it is yourself who did this\njust delete it\nanaway we create a code for you\nit is '
+    title = 'verify your email address\nTo finish setting up our app\'s account, we just need to make sure this email address is yours.\nyou may be asked to enter this security code:\n'
     msg = title + msg
     msg = MIMEText(msg, 'plain', 'utf-8')
     msg['Subject'] = 'welcome register'
