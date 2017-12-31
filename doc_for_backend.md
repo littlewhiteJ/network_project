@@ -49,9 +49,9 @@ and ("to_addr", to_addr)
 
 #### return
 ##### return "0"
-this name is occupied
-##### return "1"
 send mail okay
+##### return "1"
+this name is occupied
 
 ### /register_with_code
 #### formbuilder
@@ -77,9 +77,9 @@ you should
 add ("username", username)
 
 #### return
-##### return "0"
-you have had record today
 ##### return "1"
+you have had record today
+##### return "0"
 record saved okay 
 
 
@@ -96,46 +96,53 @@ now i will explain the string
 
 **it contents:**
 
-[
 
-	{
-	
-		"username":USERNAME
-		
-		"time":hour_min_second
-		
-	}
-	
-	{
-	
-		"username":littlewhiteJ
-		
-		"time":8_15_55
-		
-	}
-	
-]
 
-### /get_user_record
+{
+
+	"username":time
+
+	"tianguiyu":12345567  # time.time()
+
+}
+
+
+### /get_register_sum
 #### formbuilder
 
-add ("which_user", username)
+add ("username", username)
 
-and ("info", info)
-```
-switch(info)
-case 0: return sum # the sum of his register days
-case 1: return record_sum # the sum of his record days
-case 2: return the detail of the record( explain by a dict, and the time is timestamp)
-case 3: return con_record # his continue record times
-```
 #### return
-##### return '0'
-no that user
-##### return '1'
-info is wrong
-##### return a string
-explain above
+register num # how many days past from the day you register
+
+### /get_record_sum
+#### formbuilder
+
+add ("username", username)
+
+#### return
+record num # how many days you record
+
+### /get_continue_record_sum
+#### formbuilder
+
+add ("username", username)
+
+#### return
+continue record num # how many days you continue recording
+
+### /get_record_detail
+#### formbuilder
+
+add ("username", username)
+
+#### return
+a string and its structure is as follows
+#### record_detail
+{
+	today:time
+	2018_01_01:123456789
+}
 
 ### /all_ranking
 #### formbuilder
@@ -151,11 +158,11 @@ now i will explain the string
 
 	"rank":ranknum
 	
-	"first2sixth":
+	"1to6":
 	
 		[
 		
-			"name":sum of reocrd
+			"name":sum of record
 			
 			...
 			
@@ -177,11 +184,11 @@ now i will explain the string
 
 	"rank":ranknum
 	
-	"first2sixth":
+	"1to6":
 	
 		[
 		
-			"name":sum of continue reocrd
+			"name":sum of continue record
 			
 			...
 			
@@ -190,6 +197,42 @@ now i will explain the string
 }
 
 
+## these are the backend data structures, omit it if you do not care about it
+
+**manage by sqlalchemy**
+we have several tables to store the data
+### User
+username
+password
+email
+register_sum
+record_sum
+continue_record_sum
+record_detail
+
+#### record_detail
+{
+	today:time
+	2018_01_01:123456789
+}
+
+### Date
+today
+recordToday
+
+#### recordToday
+{
+	username:time
+	tianguiyu:12346798
+}
+
+### All_ranking
+username
+all_sum
+
+### Continue_ranking 
+username
+con_sum
 
 
 ## to be continued
