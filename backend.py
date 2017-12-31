@@ -27,22 +27,48 @@ maildict = {}
 def test():
     return 'server is okay'
 
-class userInfoTable(userdb.Model):
+class User(userdb.Model):
     __tablename__='userInfo'
     id=userdb.Column(userdb.Integer,primary_key=True)
     username=userdb.Column(userdb.String,unique=True)
     password=userdb.Column(userdb.String)
+    email=userdb.Column(userdb.String)
+    register_sum=userdb.Column(userdb.Integer)
+    record_sum=userdb.Column(userdb.Integer)
+    continue_record_sum=userdb.Column(userdb.Integer)
+    record_detail=userdb.Column(userdb.String)
+    def __repr__(self):
+        return 'table name is '+self.username
 
+class Date(userdb.Model):
+    __tablename__='Date'
+    id=userdb.Column(userdb.Integer,primary_key=True)
+    today=userdb.Column(userdb.String,unique=True)
+    recordToday=userdb.Column(userdb.String)
+    def __repr__(self):
+        return 'table name is '+self.username
+
+class con_record(userdb.Model):
+    __tablename__='con_record'
+    id=userdb.Column(userdb.Integer,primary_key=True)
+    username=userdb.Column(userdb.String,unique=True)
+    con_sum=userdb.Column(userdb.Integer)
+    def __repr__(self):
+        return 'table name is '+self.username
+
+class all_record(userdb.Model):
+    __tablename__='all_record'
+    id=userdb.Column(userdb.Integer,primary_key=True)
+    username=userdb.Column(userdb.String,unique=True)
+    all_sum=userdb.Column(userdb.Integer)
     def __repr__(self):
         return 'table name is '+self.username
 
 @app.route('/user',methods=['POST'])
 def check_user():
-    userdb.create_all()
-    haveregisted = userInfoTable.query.filter_by(username=request.form['username']).all()
-    if haveregisted.__len__() is not 0: 
-        passwordRight = userInfoTable.query.filter_by(username=request.form['username'],password=request.form['password']).all()
-        if passwordRight.__len__() is not 0:
+    user = User.query.filter_by(username=request.form['username']).first()
+    if user is not None:
+        if user.password == request.form['password']:
             return '0' # 'login okay'
         else:
             return '1' # 'password is wrong'
@@ -54,15 +80,15 @@ def check_user():
 @app.route('/register',methods=['POST'])
 def register():
     username = request.form['username']
-    haveregisted = userInfoTable.query.filter_by(username=username).all()
-    if haveregisted.__len__() is not 0: # judge if or not register
-        return '0' # 'this name is occupied'
+    user = User.query.filter_by(username=username).first()
+    if user is not None: # judge if or not register
+        return '1' # 'this name is occupied'
     to_addr = request.form['to_addr']
     code = code_generator()
     codedict[username] = code
     maildict[username] = to_addr
     email_(code, to_addr, mail_password)
-    return '1' # 'send mail okay'
+    return '0' # 'send mail okay'
 
 #register with code
 @app.route('/register_with_code',methods = ['POST'])
@@ -72,26 +98,20 @@ def register_():
     password = request.form['password']
     if code == codedict[username]:
         codedict.pop(username)
-        userInfo=userInfoTable(username=username,password=password)
+        userInfo=User(username=username,password=password,
+                      email=maildict[username],register_sum=0,
+                      record_sum=0,continue_record_sum=0,
+                      record_detail='')
         userdb.session.add(userInfo)
+
+        c_record=con_record(username=username,con_sum=0)
+        userdb.session.add(c_record)
+
+        a_record=all_record(username=username,all_sum=0)
+        userdb.session.add(a_record)
+
         userdb.session.commit()
-        with open('data/' + username + '.json', 'w') as userf:
-	        userdict = {}
-	        userdict['username'] = username
-	        userdict['email'] = maildict[username]
-	        userdict['sum'] = 0
-	        userdict['record_sum'] = 0
-            userdict['con_record'] = 0
-	        userdict['record'] = []
-	        json.dump(userdict, userf)
-        with open('data/all_ranking.json', 'r+') as arf:
-            ardict = json.load(arf)
-            ardict[username] = 0
-            json.dump(ardict, arf)
-        with open('data/con_ranking.json', 'r+') as crf:
-            crdict = json.load(crf)
-            crdict[username] = 0
-            json.dump(crdict, crf)
+
         return '0' # register okay
     return '1' # code error
 
@@ -100,162 +120,116 @@ def register_():
 @app.route('/record', methods = ['POST'])
 def record():
     username = request.form['username']
-    localtime = time.localtime(time.time())
+    now = time.time()
+    localtime = time.localtime(now)
     today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
-    filename = '/data/' + today + '.json'
+
     # add or append today's data
-    if(os.path.exists(filename)): # if someone have had record today
-        jsonf = open(filename, 'r+')
-        todaydict = json.load(jsonf)
-        namelst = todaydict['namelst']
-        if username in namelst:
-            jsonf.close()
-            return '0' # you have had your record today
-        namelst.append(username)
-        recordlst = todaydict['recordlst']
-        userdict = {}
-        userdict['username'] = username
-        userdict['time'] = str(time.time())
-        recordlst.append(userdict)
-        todaydict['recordlst'] = recordlst
+    todayData = Date.query.filter_by(today=today).first()
+    if todayData is not None: # if someone have had record todayb
+        user = User.query.filter_by(username=username).first()
+        record_dict = json.loads(user.record_detail)
+        if today in record_dict:
+            return '1' # you have had your record today
+        today_dict = json.loads(todayData.recordToday)
+        today_dict[username] = now
+        todayData.recordToday = json.dumps(today_dict)
     else: # if nobody records today
-        haveregisted = userInfoTable.query.filter_by(username=username).all()
-        for name in haveregisted:
-            with open('data/' + name + '.json') as f:
-                udict = json.load(f)
-                udict['sum'] += 1
+        all_user = User.query.all()
+        for user in all_user:
+            user.register_sum += 1
 
-                todaytime = time.time()
-                yesttime = todaytime - 86400
-                ylocaltime = time.localtime(yesttime)
-                yesterday = str(ylocaltime.tm_year) + '_' + str(ylocaltime.tm_mon) + '_' + str(ylocaltime.tm_mday)
-                yfile = 'data/' + yesterday + '.json'
-                if os.path.isfile(yfile):
-                    with open(yfile) as yf:
-                        ydict = json.load(yf)
-                        ynamelst = ydict['namelst']
-                        if name not in ynamelst:
-                            udict['con_record'] = 0
+            todaytime = now
+            yesttime = todaytime - 86400
+            ylocaltime = time.localtime(yesttime)
+            yesterday = str(ylocaltime.tm_year) + '_' + str(ylocaltime.tm_mon) + '_' + str(ylocaltime.tm_mday)
+            record_dict = json.loads(user.record_detail)
+            if yesterday not in record_dict:
+                user.continue_record_sum = 0
+        today_dict = {}
+        today_dict[username] = now
+        todayData = Date(today=today, recordToday = json.dumps(today_dict))
+        userdb.session.add(todayData)
 
-        jsonf = open(filename, 'w')
-        todaydict = {}
-        namelst = []
-        namelst.append(username)
-        recordlst = []
-        userdict = {}
-        userdict['username'] = username
-        userdict['time'] = str(time.time())
-        recordlst.append(userdict)
-        todaydict['today'] = today
-        todaydict['namelst'] = namelst
-        todaydict['recordlst'] = recordlst
  
 
-    json.dump(todaydict, jsonf)
-    jsonf.close()
 
     # modify user's data
-    userf = open('data/' + username + '.json', 'r+')
-    udict = json.load(userf)
-    udict['record_sum'] += 1
-    udict['con_record'] += 1
-    con_record = udict['con_record']
-    ulst = udict['record']
-    ulst.append(str(time.time()))
-    udict['record'] = ulst
-    json.dump(udict, userf)
-    userf.close()
+    user = User.query.filter_by(username=username).first()
+    user.record_sum += 1
+    user.continue_record_sum += 1
+    record_dict = json.loads(user.record_detail)
+    record_dict[today] = now
+    user.record_detail = json.dumps(record_dict)
     
     # modify all_ranking data
-    with open('data/all_ranking.json', 'r+') as arf:
-        ardict = json.load(arf)
-        ardict[username] += 1
-        json.dump(ardict, arf)
+    all_r = all_record.query.filter_by(username=username).first()
+    all_r.all_sum += 1
 
     # modify con_ranking data
-    with open('data/con_ranking.json', 'r+') as crf:
-        crdict = json.load(crf)
-        crdict[username] = con_record
-        json.dump(crdict, crf)
+    con_r = con_record.query.filter_by(username=username).first()
+    con_r.con_sum += 1
 
-    return '1' # record successfully
+    userdb.session.commit()
+    return '0' # record successfully
 
 @app.route('/get_today_record', methods = ['POST'])
 def get_today_record():
     localtime = time.localtime(time.time())
     today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
-    filename = 'data/' + today + '.json'
-    if(os.path.exists(filename)):
-        jsonf = open(filename, 'r+')
-        todaydict = json.load(jsonf)
-        recordlst = todaydict['recordlst']
-        record_string = json.dumps(recordlst)
-        return record_string
+    todayData = Date.query.filter_by(today=today).first()
+    if(todayData is not None):
+        return todayData.recordToday
     else:
-        return '0' # no today record
+        return '1' # no today record
    
-@app.route('/get_user_record', methods = ['POST'])
-def get_user_record():
-    user = request.form['which_user']
-    info = request.form['info']
-    filename = 'data/' + user + '.json'
-    if (os.path.exists(filename)):
-        userf = open(filename, 'r')
-        userdict = json.load(userf)
-        if info == 0:
-            return userdict['sum']
-        if info == 1:
-            return userdict['record_sum']
-        if info == 2:
-            return json.dumps(userdict['record'])
-        if info == 3:
-            return userdict['con_record']
-        return '1' # info num is wrong
-    else:
-        return '0' # no that user
+@app.route('/get_register_sum', methods = ['POST'])
+def get_register_sum():
+    username = request.form['username']
+    user = User.query.filter_by(username=username).first()
+    return user.register_sum
+
+@app.route('/get_record_sum', methods = ['POST'])
+def get_record_sum():
+    username = request.form['username']
+    user = User.query.filter_by(username=username).first()
+    return user.record_sum
+
+@app.route('/get_continue_record_sum', methods = ['POST'])
+def get_continue_record_sum():
+    username = request.form['username']
+    user = User.query.filter_by(username=username).first()
+    return user.continue_record_sum
+
+@app.route('/get_record_detail', methods = ['POST'])
+def get_record_detail():
+    username = request.form['username']
+    user = User.query.filter_by(username=username).first()
+    return json.dumps(user.record_detail)
 
 @app.route('/all_ranking', methods = ['POST'])
 def all_ranking():
     username = request.form['username']
-    with open('data/all_ranking.json', 'r') as arf:
-        ardict = json.load(arf)
-        lst = sorted(ardict.iteritems(), key = lambda d:d[1], reverse = True)
-        lstl = len(lst)
-        rank = 0
-        for i in range(lstl):
-            if lst[i][0] == username:
-                rank = i + 1
-        rankdict = {}
-        rankdict['rank'] = rank
-        rankdict['first2sixth'] = lst[:6]
-        return json.dumps(rankdict)
+    output = all_record.query.order_by(userdb.desc(all_record.all_sum))
+    user = all_record.query.filter_by(username=username).first()
+    num = output.index(user)
+    dict = {}
+    dict['rank'] = num
+    dict['1to6'] = output[:6]
+    return json.dumps(dict)
 
 @app.route('/con_ranking', methods = ['POST'])
 def con_ranking():
     username = request.form['username']
-    with open('data/con_ranking.json', 'r') as crf:
-        crdict = json.load(crf)
-        lst = sorted(crdict.iteritems(), key = lambda d:d[1], reverse = True)
-        lstl = len(lst)
-        rank = 0
-        for i in range(lstl):
-            if lst[i][0] == username:
-                rank = i + 1
-        rankdict = {}
-        rankdict['rank'] = rank
-        rankdict['first2sixth'] = lst[:6]
-        return json.dumps(rankdict)
+    output = con_record.query.order_by(userdb.desc(con_record.con_sum))
+    user = con_record.query.filter_by(username=username).first()
+    num = output.index(user)
+    dict = {}
+    dict['rank'] = num
+    dict['1to6'] = output[:6]
+    return json.dumps(dict)
 
 if __name__ == '__main__':
-    if !os.path.isfile('data/all_ranking.json'):
-        with open('data/all_ranking.json', 'w') as arf:
-            ardict = {}
-            json.dump(ardict, arf)
-
-    if !os.path.isfile('data/con_ranking'):
-        with open('data/con_ranking.json', 'w') as crf:
-            crdict = {}
-            json.dump(crdict, crf)
-
+    userdb.create_all()
     app.run(host = '0.0.0.0')
     
