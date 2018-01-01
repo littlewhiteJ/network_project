@@ -123,6 +123,15 @@ add ("username", username)
 #### return
 record num # how many days you record
 
+### /if_today_record
+#### formbuilder
+
+add ("username", username)
+
+#### return
+1 # record today
+0 # no record today
+
 ### /get_continue_record_sum
 #### formbuilder
 
