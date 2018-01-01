@@ -101,7 +101,7 @@ def register_():
         userInfo=User(username=username,password=password,
                       email=maildict[username],register_sum=0,
                       record_sum=0,continue_record_sum=0,
-                      record_detail='')
+                      record_detail='{}')
         userdb.session.add(userInfo)
 
         c_record=con_record(username=username,con_sum=0)
@@ -206,6 +206,20 @@ def get_record_detail():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
     return json.dumps(user.record_detail)
+
+@app.route('/if_today_record', methods = ['POST'])
+def if_today_record():
+    username = request.form['username']
+    user = User.query.filter_by(username=username).first()
+    detail_dict = user.record_detail
+    localtime = time.localtime(time.time())
+    today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
+    if today in detail_dict:
+        return 1
+    else:
+        return 0
+
+    return user.continue_record_sum
 
 @app.route('/all_ranking', methods = ['POST'])
 def all_ranking():
