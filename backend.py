@@ -179,7 +179,7 @@ def get_today_record():
     today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
     todayData = Date.query.filter_by(today=today).first()
     if(todayData is not None):
-        return todayData.recordToday
+        return json.dumps(todayData.recordToday)
     else:
         return '1' # no today record
    
@@ -210,23 +210,29 @@ def get_record_detail():
 @app.route('/all_ranking', methods = ['POST'])
 def all_ranking():
     username = request.form['username']
-    output = all_record.query.order_by(userdb.desc(all_record.all_sum))
+    output = all_record.query.order_by(userdb.desc(all_record.all_sum)).limit(6)
     user = all_record.query.filter_by(username=username).first()
-    num = output.index(user)
+    num = user.id
+    outdict = {}
+    for out in output:
+        outdict[out.username] = out.all_sum
     dict = {}
     dict['rank'] = num
-    dict['1to6'] = output[:6]
+    dict['1to6'] = json.dumps(outdict)
     return json.dumps(dict)
 
 @app.route('/con_ranking', methods = ['POST'])
 def con_ranking():
     username = request.form['username']
-    output = con_record.query.order_by(userdb.desc(con_record.con_sum))
+    output = con_record.query.order_by(userdb.desc(con_record.con_sum)).limit(6)
     user = con_record.query.filter_by(username=username).first()
-    num = output.index(user)
+    num = user.id
+    outdict = {}
+    for out in output:
+        outdict[out.username] = out.con_sum
     dict = {}
     dict['rank'] = num
-    dict['1to6'] = output[:6]
+    dict['1to6'] = json.dumps(outdict)
     return json.dumps(dict)
 
 if __name__ == '__main__':
