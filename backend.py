@@ -126,7 +126,7 @@ def record():
 
     # add or append today's data
     todayData = Date.query.filter_by(today=today).first()
-    if todayData is not None: # if someone have had record todayb
+    if todayData is not None: # if someone have had record today
         user = User.query.filter_by(username=username).first()
         record_dict = json.loads(user.record_detail)
         if today in record_dict:
