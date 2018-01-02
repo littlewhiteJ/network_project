@@ -39,6 +39,14 @@ class User(userdb.Model):
     record_detail=userdb.Column(userdb.String)
     def __repr__(self):
         return 'table name is '+self.username
+    def __init__(self, username, password, email):
+        self.username = username
+        self.password = password
+        self.email = email
+        self.register_sum = 0
+        self.record_sum = 0
+        self.continue_record_sum = 0
+        self.record_detail = json.dumps({})
 
 class Date(userdb.Model):
     __tablename__='Date'
@@ -99,9 +107,7 @@ def register_():
     if code == codedict[username]:
         codedict.pop(username)
         userInfo=User(username=username,password=password,
-                      email=maildict[username],register_sum=0,
-                      record_sum=0,continue_record_sum=0,
-                      record_detail='{}')
+                      email=maildict[username])
         userdb.session.add(userInfo)
 
         c_record=con_record(username=username,con_sum=0)
@@ -122,7 +128,8 @@ def record():
     username = request.form['username']
     now = time.time()
     localtime = time.localtime(now)
-    today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
+    today = str(localtime.tm_year) + '.' + str(localtime.tm_mon) + '.' + str(localtime.tm_mday)
+    clock_now = str(localtime.tm_hour) + ':' + str(localtime.tm_min)
 
     # add or append today's data
     todayData = Date.query.filter_by(today=today).first()
@@ -135,19 +142,19 @@ def record():
         today_dict[username] = now
         todayData.recordToday = json.dumps(today_dict)
     else: # if nobody records today
-        all_user = User.query.all()
-        for user in all_user:
-            user.register_sum += 1
-
-            todaytime = now
-            yesttime = todaytime - 86400
-            ylocaltime = time.localtime(yesttime)
-            yesterday = str(ylocaltime.tm_year) + '_' + str(ylocaltime.tm_mon) + '_' + str(ylocaltime.tm_mday)
-            record_dict = json.loads(user.record_detail)
-            if yesterday not in record_dict:
-                user.continue_record_sum = 0
+        yesttime = now - 86400
+        ylocaltime = time.localtime(yesttime)
+        yesterday = str(ylocaltime.tm_year) + '.' + str(ylocaltime.tm_mon) + '.' + str(ylocaltime.tm_mday)
+        yestData = Date.query.filter_by(today=yesterday).first()
+        if yestData is not None:
+            all_user = User.query.all()
+            yest_dict = json.loads(yestData.recordToday)
+            for user in all_user:
+                user.register_sum += 1
+                if user.username not in yest_dict:
+                    user.continue_record_sum = 0
         today_dict = {}
-        today_dict[username] = now
+        today_dict[username] = clock_now
         todayData = Date(today=today, recordToday = json.dumps(today_dict))
         userdb.session.add(todayData)
 
@@ -159,7 +166,7 @@ def record():
     user.record_sum += 1
     user.continue_record_sum += 1
     record_dict = json.loads(user.record_detail)
-    record_dict[today] = now
+    record_dict[today] = clock_now
     user.record_detail = json.dumps(record_dict)
     
     # modify all_ranking data
@@ -176,10 +183,10 @@ def record():
 @app.route('/get_today_record', methods = ['POST'])
 def get_today_record():
     localtime = time.localtime(time.time())
-    today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
+    today = str(localtime.tm_year) + '.' + str(localtime.tm_mon) + '.' + str(localtime.tm_mday)
     todayData = Date.query.filter_by(today=today).first()
     if(todayData is not None):
-        return json.dumps(todayData.recordToday)
+        return todayData.recordToday
     else:
         return '1' # no today record
    
@@ -187,69 +194,84 @@ def get_today_record():
 def get_register_sum():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
-    return user.register_sum
+    return str(user.register_sum)
 
 @app.route('/get_record_sum', methods = ['POST'])
 def get_record_sum():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
-    return user.record_sum
+    return str(user.record_sum)
 
 @app.route('/get_continue_record_sum', methods = ['POST'])
 def get_continue_record_sum():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
-    return user.continue_record_sum
+    return str(user.continue_record_sum)
 
 @app.route('/get_record_detail', methods = ['POST'])
 def get_record_detail():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
-    return json.dumps(user.record_detail)
+    return user.record_detail
 
 @app.route('/if_today_record', methods = ['POST'])
 def if_today_record():
     username = request.form['username']
     user = User.query.filter_by(username=username).first()
-    detail_dict = user.record_detail
+    detail_dict = json.loads(user.record_detail)
     localtime = time.localtime(time.time())
-    today = str(localtime.tm_year) + '_' + str(localtime.tm_mon) + '_' + str(localtime.tm_mday)
+    today = str(localtime.tm_year) + '.' + str(localtime.tm_mon) + '.' + str(localtime.tm_mday)
     if today in detail_dict:
-        return 1
+        return '1'
     else:
-        return 0
+        return '0'
 
     return user.continue_record_sum
 
 @app.route('/all_ranking', methods = ['POST'])
 def all_ranking():
     username = request.form['username']
-    output = all_record.query.order_by(userdb.desc(all_record.all_sum)).limit(6)
+    output = all_record.query.order_by(userdb.desc(all_record.all_sum))
     user = all_record.query.filter_by(username=username).first()
-    num = user.id
-    outdict = {}
+    num = 1
     for out in output:
-        outdict[out.username] = out.all_sum
+        if out.username == user.username:
+            break
+        num += 1
+    outlist = []
+    mark = 1
+    for out in output:
+        if mark <= 6:
+            outlist.append((out.username, str(out.all_sum)))
+            mark += 1
     dict = {}
     dict['rank'] = num
-    dict['1to6'] = json.dumps(outdict)
+    dict['1to6'] = json.dumps(outlist)
     return json.dumps(dict)
 
 @app.route('/con_ranking', methods = ['POST'])
 def con_ranking():
     username = request.form['username']
-    output = con_record.query.order_by(userdb.desc(con_record.con_sum)).limit(6)
+    output = con_record.query.order_by(userdb.desc(con_record.con_sum))
     user = con_record.query.filter_by(username=username).first()
-    num = user.id
-    outdict = {}
+    num = 1
     for out in output:
-        outdict[out.username] = out.con_sum
+        if out.username == user.username:
+            break
+        num += 1
+    outlist = []
+    mark = 1
+    for out in output:
+        if mark <= 6:
+            outlist.append((out.username, str(out.con_sum)))
+            mark += 1
     dict = {}
     dict['rank'] = num
-    dict['1to6'] = json.dumps(outdict)
+    dict['1to6'] = json.dumps(outlist)
     return json.dumps(dict)
 
 if __name__ == '__main__':
     userdb.create_all()
     app.run(host = '0.0.0.0')
     
+
