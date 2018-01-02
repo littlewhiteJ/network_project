@@ -100,9 +100,9 @@ now i will explain the string
 
 {
 
-	"username":time
+	"username":str(time)
 
-	"tianguiyu":12345567  # time.time()
+	"tianguiyu":"12345567" # time.time()
 
 }
 
@@ -129,8 +129,8 @@ record num # how many days you record
 add ("username", username)
 
 #### return
-1 # record today
-0 # no record today
+"1" # record today
+"0" # no record today
 
 ### /get_continue_record_sum
 #### formbuilder
@@ -150,7 +150,7 @@ a string and its structure is as follows
 #### record_detail
 {
 	today:time
-	2018_01_01:123456789
+	2018.01.01: "13:55"
 }
 
 ### /all_ranking
@@ -171,7 +171,7 @@ now i will explain the string
 	
 		[
 		
-			"name":sum of record
+			("name", "sum of record")
 			
 			...
 			
@@ -197,7 +197,7 @@ now i will explain the string
 	
 		[
 		
-			"name":sum of continue record
+			("name", "sum of record")
 			
 			...
 			
@@ -222,7 +222,7 @@ record_detail
 #### record_detail
 {
 	today:time
-	2018_01_01:123456789
+	"2018.01.01": "13:55"
 }
 
 ### Date
@@ -232,7 +232,7 @@ recordToday
 #### recordToday
 {
 	username:time
-	tianguiyu:12346798
+	tianguiyu: "13:55"
 }
 
 ### All_ranking
